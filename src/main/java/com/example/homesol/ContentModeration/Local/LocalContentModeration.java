@@ -86,23 +86,10 @@ public class LocalContentModeration implements IContentModerator{
 	{
 		ModerateResult finalresult=new ModerateResult();
 		
-		try {
-			
-			String[] words=TokenizeText(data);
+		try {			
 			finalresult.ProfaneText=new ArrayList<TextDetail>();
-			int pos=0;
-			for (int i = 0; i < words.length; i++) {
-				
-				String temp=words[i].toLowerCase();
-				if(ProfaneHashTable.containsKey(temp.hashCode()))
-				{
-					TextDetail detail=new TextDetail();
-					detail.Position=pos+i;
-					detail.Text=words[i];
-					finalresult.ProfaneText.add(detail);
-				}
-				pos=pos+words[i].length();
-			}
+			finalresult.PersonalInfo=new ArrayList<TextDetail>();
+			GetProfaneWords(data, finalresult);
 			GetEmails(data, finalresult);
 			GetPhoneNumbers(data, finalresult);
 			GetWebUrls(data, finalresult);
@@ -116,17 +103,18 @@ public class LocalContentModeration implements IContentModerator{
 	public void GetEmails(String line,ModerateResult finalresult){
 
 		HashSet<String> container=new HashSet<String>();
-		Pattern p = Pattern.compile("(?i)\\b((?:[a-z][\\w-]+:(?:/{1,3}|[a-z0-9%])|www\\d{0,3}[.]|[a-z0-9.\\-]+[.][a-z]{2,4}/)(?:[^\\s()<>]+|\\(([^\\s()<>]+|(\\([^\\s()<>]+\\)))*\\))+(?:\\(([^\\s()<>]+|(\\([^\\s()<>]+\\)))*\\)|[^\\s`!()\\[\\]{};:'\".,<>?«»“”‘’]))");
+		Pattern p = Pattern.compile("([\\w\\-]([\\.\\w])+[\\w]+@([\\w\\-]+\\.)+[A-Za-z]{2,4})");
         Matcher m = p.matcher(line);
 
         while(m.find()) {
             container.add(m.group(1));
         }
         Object[] matcheditems=container.toArray();
+        
 		for (int i = 0; i < matcheditems.length; i++) {
 			
 			TextDetail detail=new TextDetail();
-			detail.Position=0;
+			detail.Position=line.indexOf(matcheditems[i].toString());
 			detail.Text=matcheditems[i].toString();
 			finalresult.PersonalInfo.add(detail);
 		}
@@ -141,11 +129,14 @@ public class LocalContentModeration implements IContentModerator{
             container.add(m.group(1));
         }
         Object[] matcheditems=container.toArray();
-		for (int i = 0; i < matcheditems.length; i++) {
+        for (int i = 0; i < matcheditems.length; i++) {
 			
 			TextDetail detail=new TextDetail();
-			detail.Position=0;
-			detail.Text=matcheditems[i].toString();
+			if(matcheditems[i]!=null)
+			{
+				detail.Position=line.indexOf(matcheditems[i].toString());
+				detail.Text=matcheditems[i].toString();
+			}
 			finalresult.PersonalInfo.add(detail);
 		}
 
@@ -153,20 +144,45 @@ public class LocalContentModeration implements IContentModerator{
 	public void GetWebUrls(String line,ModerateResult finalresult){
 
 		HashSet<String> container=new HashSet<String>();
-		Pattern p = Pattern.compile("([\\w\\-]([\\.\\w])+[\\w]+@([\\w\\-]+\\.)+[A-Za-z]{2,4})");
+		Pattern p = Pattern.compile("(?i)\\b((?:[a-z][\\w-]+:(?:/{1,3}|[a-z0-9%])|www\\d{0,3}[.]|[a-z0-9.\\-]+[.][a-z]{2,4}/)(?:[^\\s()<>]+|\\(([^\\s()<>]+|(\\([^\\s()<>]+\\)))*\\))+(?:\\(([^\\s()<>]+|(\\([^\\s()<>]+\\)))*\\)|[^\\s`!()\\[\\]{};:'\".,<>?«»“”‘’]))");
         Matcher m = p.matcher(line);
 
         while(m.find()) {
             container.add(m.group(1));
         }
         Object[] matcheditems=container.toArray();
-		for (int i = 0; i < matcheditems.length; i++) {
+        for (int i = 0; i < matcheditems.length; i++) {
 			
 			TextDetail detail=new TextDetail();
-			detail.Position=0;
-			detail.Text=matcheditems[i].toString();
+			if(matcheditems[i]!=null)
+			{
+				detail.Position=line.indexOf(matcheditems[i].toString());
+				detail.Text=matcheditems[i].toString();
+			}
 			finalresult.PersonalInfo.add(detail);
 		}
 
     }
+	public void GetProfaneWords(String data,ModerateResult finalresult)
+	{
+		String[] words;
+		try {
+			words = TokenizeText(data);
+			int pos=0;
+			for (int i = 0; i < words.length; i++) {				
+				String temp=words[i].toLowerCase();
+				if(ProfaneHashTable.containsKey(temp.hashCode()))
+				{
+					TextDetail detail=new TextDetail();
+					detail.Position=pos+i;
+					detail.Text=words[i];
+					finalresult.ProfaneText.add(detail);
+				}
+				pos=pos+words[i].length();
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 }
