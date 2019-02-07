@@ -1,7 +1,6 @@
 package com.example.homesol.ContentModeration.Azure;
 
 import java.nio.charset.StandardCharsets;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
@@ -15,7 +14,8 @@ import com.microsoft.azure.cognitiveservices.vision.contentmoderator.ContentMode
 import com.microsoft.azure.cognitiveservices.vision.contentmoderator.TextModerations;
 import com.microsoft.azure.cognitiveservices.vision.contentmoderator.models.*;
 
-
+@Primary
+@Component
 public class ContentModerator implements IContentModerator  {
 
 	TextModerations moderator;
@@ -46,15 +46,15 @@ public class ContentModerator implements IContentModerator  {
 	public String CreateReview(String data)throws InterruptedException,ServerErrorException
 	{
 		Secrets client=new Secrets(Region, BaseUrl, UserName, Key);
-		ContentModeratorClient clnt= Secrets.NewClient();
+		ContentModeratorClient clnt= client.NewClient();
 		if(clnt==null)
 		{
 			throw new ServerErrorException("Unable to Create Azure clinet");
 		}
 		 
 		Screen res=clnt.textModerations().screenText("text/plain",data.getBytes(StandardCharsets.UTF_8), new ScreenTextOptionalParameter()
-				.withPII(true)
-				.withClassify(true));
+				.withPII(IsPIIRequired)
+				.withClassify(IsClassificationRequired));
 		
 		ModerateResult finalresult= Helper.ConvertToModerateResult(res);
 		Gson gson = new Gson();

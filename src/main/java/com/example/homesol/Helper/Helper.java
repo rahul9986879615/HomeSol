@@ -14,7 +14,11 @@ public class Helper {
 		{
 			finalresult=new ModerateResult();
 			finalresult.ProfaneText=GetProfoneWords(result);
+			
+			if(result.pII()!=null)
 			finalresult.PersonalInfo=GetPersonalInfo(result);
+			
+			if(result.classification()!=null)
 			finalresult.Category=GetCategory(result);
 			}
 		return finalresult;		

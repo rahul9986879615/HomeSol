@@ -1,11 +1,7 @@
 package com.example.homesol.ContentModeration.Local;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -15,70 +11,20 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import com.example.homesol.Interface.IContentModerator;
+import com.example.homesol.cache.ProfaneWords;
 import com.example.homesol.model.ModerateResult;
 import com.example.homesol.model.TextDetail;
 import com.google.gson.Gson;
 
 import opennlp.tools.tokenize.SimpleTokenizer;
 
-@Primary
-@Component
 public class LocalContentModeration implements IContentModerator{
 
-	java.util.HashMap<Integer, List<String>> ProfaneHashTable = new java.util.HashMap<Integer, List<String>>();
-	
-	public void GenerateHashMap()
-	{
-		List<String> profanelist=readFileInList("C:\\WorkRelated\\Java\\Google-profanity-words-master\\Google-profanity-words-master\\list.txt");
-		for (int i = 0; i < profanelist.size(); i++) {
-			
-			String value=profanelist.get(i).trim();
-			int key=value.hashCode();
-			if(value.equalsIgnoreCase("fuck"))
-			{
-				System.out.println(key);
-			}
-			if(ProfaneHashTable.containsKey(key))
-			{
-				ProfaneHashTable.get(key).add(value);
-			}
-			else
-			{
-				List<String> temp=new ArrayList<String>();
-				temp.add(value);
-				ProfaneHashTable.put(key, temp);			
-			}
-		}
-	}
-	public String[] TokenizeText(String data) 
-			  throws Exception {
-		
-				String[] tokens=null;
-			    SimpleTokenizer tokenizer = SimpleTokenizer.INSTANCE;
-			    tokens = tokenizer.tokenize(data);
-			   return tokens;
-					   
-			  }
-	private List<String> readFileInList(String fileName) 
-	  { 	  
-	    List<String> lines = Collections.emptyList(); 
-	    try
-	    { 
-	      lines = 
-	       Files.readAllLines(Paths.get(fileName), StandardCharsets.UTF_8); 
-	    } 	  
-	    catch (IOException e) 
-	    { 
-	      // do something 
-	      e.printStackTrace(); 
-	    } 
-	    return lines; 
-	  }
-
+	HashMap<Integer, List<String>> ProfaneHashTable=null;
 	@Override
 	public String ValidateText(String data) {
 		// TODO Auto-generated method stub
-		GenerateHashMap();
+		ProfaneHashTable=ProfaneWords.GetInstance().getProfaneHashTable();
 		return ParseAndValidate(data);
 	} 
 	
@@ -99,6 +45,38 @@ public class LocalContentModeration implements IContentModerator{
 		}
 		Gson gson = new Gson();		
 		return gson.toJson(finalresult);
+	}
+	
+	private String[] TokenizeText(String data) 
+			  throws Exception {
+		
+				String[] tokens=null;
+			    SimpleTokenizer tokenizer = SimpleTokenizer.INSTANCE;
+			    tokens = tokenizer.tokenize(data);
+			   return tokens;
+					   
+			  }
+	private void GetProfaneWords(String data,ModerateResult finalresult)
+	{
+		String[] words;
+		try {
+			words = TokenizeText(data);
+			int pos=0;
+			for (int i = 0; i < words.length; i++) {				
+				String temp=words[i].toLowerCase();
+				if(ProfaneHashTable.containsKey(temp.hashCode()))
+				{
+					TextDetail detail=new TextDetail();
+					detail.Position=pos+i;
+					detail.Text=words[i];
+					finalresult.ProfaneText.add(detail);
+				}
+				pos=pos+words[i].length();
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	public void GetEmails(String line,ModerateResult finalresult){
 
@@ -163,26 +141,5 @@ public class LocalContentModeration implements IContentModerator{
 		}
 
     }
-	public void GetProfaneWords(String data,ModerateResult finalresult)
-	{
-		String[] words;
-		try {
-			words = TokenizeText(data);
-			int pos=0;
-			for (int i = 0; i < words.length; i++) {				
-				String temp=words[i].toLowerCase();
-				if(ProfaneHashTable.containsKey(temp.hashCode()))
-				{
-					TextDetail detail=new TextDetail();
-					detail.Position=pos+i;
-					detail.Text=words[i];
-					finalresult.ProfaneText.add(detail);
-				}
-				pos=pos+words[i].length();
-			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
+	
 }

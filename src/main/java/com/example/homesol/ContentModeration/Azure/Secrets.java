@@ -6,6 +6,7 @@ import com.microsoft.azure.cognitiveservices.vision.contentmoderator.models.Azur
 //Wraps the creation and configuration of a Content Moderator client.
 public class Secrets {
 	
+	
 	// The region/location for your Content Moderator account, 
     private static  String AzureRegion ;
     private static String UserName="";
@@ -13,17 +14,16 @@ public class Secrets {
     private static String Key="";
     // The base URL fragment for Content Moderator calls.
     private static String AzureBaseURL ="https://{AzureRegion}.api.cognitive.microsoft.com";
- 
-    public Secrets(String azureregion,String azurebaseurl,String username,String password) {
-    	
-    	AzureRegion=azureregion;
-    	AzureBaseURL=azurebaseurl;
-    	UserName=username;
-    	Key=password;
-    	}
     
-    // Returns a new Content Moderator client for your subscription.
-    public static ContentModeratorClient NewClient()
+    public Secrets(String region, String baseUrl, String userName2, String key) {
+    	AzureRegion=region;
+    	UserName=userName2;
+    	Key=key;
+    	AzureBaseURL=baseUrl;
+	}
+
+	// Returns a new Content Moderator client for your subscription.
+    public ContentModeratorClient NewClient()
     {
         // Create and initialize an instance of the Content Moderator API wrapper..
     	try
